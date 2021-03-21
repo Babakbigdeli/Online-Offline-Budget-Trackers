@@ -32,7 +32,7 @@ self.addEventListener("install", function (event) {
     self.skipWaiting();
   });
 
-  // Activating the service worker and removing old data from the cache if there is any
+// Activating the service worker and removing old data from the cache if there is any
 self.addEventListener("activate", function (event) {
     event.waitUntil(
       caches.keys().then((keyList) => {
@@ -48,3 +48,27 @@ self.addEventListener("activate", function (event) {
     self.clients.claim();
   });
 
+// Serevice worker intercepting the network request and acts accordingly based on success or failure of request. 
+
+self.addEventListener("fetch", function (event) {
+    if (event.request.url.includes("/api/")) {
+      event.respondWith(
+        caches.open(DATA_CACHE_NAME).then((cache) => {
+            return fetch(event.request)
+              .then((response) => {
+                if (response.status === 200) {
+                  cache.put(event.request.url, response.clone());
+                }
+                return response;
+              })
+              .catch((err) => {
+                return cache.match(event.request);
+              });
+          })
+          .catch((err) => console.log(err))
+      );
+  
+      return;
+    }
+
+    
